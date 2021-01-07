@@ -1,8 +1,8 @@
 package testing
 
 import (
-	db_token "MaintainSrc/yk-cloud-disperse/Models/mytoken"
-	"MaintainSrc/yk-cloud-disperse/distributed"
+	db_token "distributed/Models/mytoken"
+	"distributed/distributed"
 	"fmt"
 	"testing"
 	"time"
