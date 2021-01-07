@@ -109,7 +109,7 @@ func (p *MyDbDistributed) Generate(t time.Time, num int64) string {
 }
 
 //获取
-func (p *MyDbDistributed) AnalysisCode(OrderCode string) (DbDistributed, error) {
+func (p *MyDbDistributed) AnalysisCode(OrderCode string, tableName string) (string, DbDistributed, error) {
 	var dinfo DbDistributed
 	dinfo.Cfg.DbNo = -1
 	dinfo.Cfg.TableNo = -1
@@ -122,12 +122,12 @@ func (p *MyDbDistributed) AnalysisCode(OrderCode string) (DbDistributed, error) 
 		dinfo.Name = fmt.Sprintf("%v%v", p.Sup(dbNo, 2), p.Sup(tableNo, 2))
 
 		if _, ok := p.connlist[dinfo.Name]; ok {
-
-			return p.connlist[dinfo.Name], nil
+			tableName := fmt.Sprintf("%v_%v",tableName, p.Sup(p.connlist[dinfo.Name].Cfg.TableNo, 2))
+			return tableName, p.connlist[dinfo.Name], nil
 		}
-		return dinfo, errors.New("不存在库和表")
+		return "", dinfo, errors.New("不存在库和表")
 	}
-	return dinfo, errors.New("长度必须是28位")
+	return "", dinfo, errors.New("长度必须是28位")
 }
 
 func (p *MyDbDistributed) pidSub(i int64) int64 {
