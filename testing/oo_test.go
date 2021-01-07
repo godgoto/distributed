@@ -1,12 +1,17 @@
 package testing
 
 import (
-	db_token "distributed/Models/mytoken"
 	"distributed/distributed"
 	"fmt"
 	"testing"
 	"time"
 )
+
+
+type MToken struct {
+	Id int `gorm:auto_increment`
+	Token string `gorm:varchar(64)`
+}
 
 
 func Test_Create(t *testing.T)  {
@@ -22,7 +27,7 @@ func Test_Create(t *testing.T)  {
 			fmt.Println(err.Error())
 			return
 		}
-		var mm db_token.MToken
+		var mm MToken
 		mm.Token = orderCode
 		tableName := fmt.Sprintf("m_token_%v",p.Sup(conn.Cfg.TableNo,2))
 		db :=conn.Conn.Table(tableName).Create(&mm)
@@ -44,7 +49,7 @@ func Test_Search(t *testing.T) {
 	}
 
 	{
-		var ttt db_token.MToken
+		var ttt MToken
 		token := "2021010618045445860402010020"
 		conn,err := p.AnalysisCode(token)
 		if err != nil {
@@ -116,7 +121,7 @@ func Test_createOneDb(t *testing.T)  {
 			fmt.Println(err.Error())
 			return
 		}
-		var mm db_token.MToken
+		var mm MToken
 		mm.Token = orderCode
 		tableName := fmt.Sprintf("m_token_%v",conn.Name)
 		db :=conn.Conn.Table(tableName).Create(&mm)
