@@ -16,13 +16,15 @@ const DB_MaxOpenConns = 15
 
 //配置文件
 type DbConfig struct {
-	Host     string // 主机名称
-	Port     string // 端口
-	UserName string // 用户名
-	UserPwd  string // 密码
-	DbName   string // 数据库名称
-	DbNo     int64  "" //2位   - 库名
-	TableNo  int64  "" //2位   - 表名
+	Host           string // 主机名称
+	Port           string // 端口
+	UserName       string // 用户名
+	UserPwd        string // 密码
+	DbName         string // 数据库名称
+	DbNo           int64  "" //2位   - 库名
+	TableNo        int64  "" //2位   - 表名
+	DbMaxConns     int
+	DBMaxOpenConns int
 }
 
 //分布式服务
@@ -64,8 +66,8 @@ func (p *MyDbDistributed) OpenDb(cfg DbConfig) (*gorm.DB, error) {
 		return nil, err
 	}
 	CloudOrderDb.SingularTable(true)
-	CloudOrderDb.DB().SetMaxIdleConns(DB_MaxConns)
-	CloudOrderDb.DB().SetMaxOpenConns(DB_MaxOpenConns)
+	CloudOrderDb.DB().SetMaxIdleConns(cfg.DbMaxConns)
+	CloudOrderDb.DB().SetMaxOpenConns(cfg.DBMaxOpenConns)
 	return CloudOrderDb, nil
 }
 
@@ -86,7 +88,7 @@ func (p *MyDbDistributed) CloseDbAll() {
 
 //生成24位订单号
 // num 为序号
-//前面17位代表时间精确到毫秒，中间3位代表进程id，  (20位)2位库名  (22位)2位表名     序号最后4位代表序号
+//前面17位代表时间精确到毫秒，中间3位代表进程id，    (22位)2位表名     序号最后4位代表序号
 // 20201231161128|753|164|02|01|0002
 func (p *MyDbDistributed) Generate(t time.Time, num int64) string {
 	//time
@@ -122,7 +124,7 @@ func (p *MyDbDistributed) AnalysisCode(OrderCode string, tableName string) (stri
 		dinfo.Name = fmt.Sprintf("%v%v", p.Sup(dbNo, 2), p.Sup(tableNo, 2))
 
 		if _, ok := p.connlist[dinfo.Name]; ok {
-			tableName := fmt.Sprintf("%v_%v",tableName, p.Sup(p.connlist[dinfo.Name].Cfg.TableNo, 2))
+			tableName := fmt.Sprintf("%v_%v", tableName, p.Sup(p.connlist[dinfo.Name].Cfg.TableNo, 2))
 			return tableName, p.connlist[dinfo.Name], nil
 		}
 		return "", dinfo, errors.New("不存在库和表")
