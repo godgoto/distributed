@@ -22,7 +22,7 @@ func Test_Create(t *testing.T)  {
 	}
 	for i:=0;i<10;i++ {
 		orderCode := p.Generate(time.Now(),int64(i))
-		conn,err := p.AnalysisCode(orderCode)
+		conn,err := p.AnalysisCode(orderCode,"mytoken")
 		if err !=nil {
 			fmt.Println(err.Error())
 			return
@@ -51,7 +51,7 @@ func Test_Search(t *testing.T) {
 	{
 		var ttt MToken
 		token := "2021010618045445860402010020"
-		conn,err := p.AnalysisCode(token)
+		conn,err := p.AnalysisCode(token,"mytoken")
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -116,14 +116,14 @@ func Test_createOneDb(t *testing.T)  {
 	}
 	for i:=0;i<10;i++ {
 		orderCode := p.Generate(time.Now(),int64(i))
-		conn,err := p.AnalysisCode(orderCode)
+		conn,err := p.AnalysisCode(orderCode,"mytoken")
 		if err !=nil {
 			fmt.Println(err.Error())
 			return
 		}
 		var mm MToken
 		mm.Token = orderCode
-		tableName := fmt.Sprintf("m_token_%v",conn.Name)
+		tableName := fmt.Sprintf("m_token_%v",conn.Key)
 		db :=conn.Conn.Table(tableName).Create(&mm)
 		if db.Error != nil {
 			fmt.Println("插入失败 :","table:",tableName," token:",orderCode," x:",conn)

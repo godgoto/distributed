@@ -29,9 +29,11 @@ type DbConfig struct {
 
 //分布式服务
 type DbDistributed struct {
-	Name string
-	Conn *gorm.DB //本数据的链接
-	Cfg  DbConfig //配置文件
+	Key        	string   //2位(库)2位(表名) = key
+	TableName  	string   //解析采用的到 - table的名称
+	UniqueCode  string 	 //解析采用的到 - 解析的code
+	Conn      *gorm.DB //本数据的CONN
+	Cfg       DbConfig //配置文件
 }
 
 type MyDbDistributed struct {
@@ -52,9 +54,9 @@ func NewMyDbDistributed(configList []DbConfig) (*MyDbDistributed, error) {
 		if err != nil {
 			return nil, err
 		}
-		item.Name = fmt.Sprintf("%v%v", p.Sup(cfg.DbNo, 2), p.Sup(cfg.TableNo, 2))
+		item.Key = fmt.Sprintf("%v%v", p.Sup(cfg.DbNo, 2), p.Sup(cfg.TableNo, 2))
 		item.Conn = conn
-		p.connlist[item.Name] = item
+		p.connlist[item.Key] = item
 		p.connlist2 = append(p.connlist2, item)
 	}
 	return &p, nil
@@ -110,26 +112,45 @@ func (p *MyDbDistributed) Generate(t time.Time, num int64) string {
 	return n
 }
 
-//获取
-func (p *MyDbDistributed) AnalysisCode(OrderCode string, tableName string) (string, DbDistributed, error) {
+//分析出表明  链接
+func (p *MyDbDistributed) AnalysisCode(UniqueCode string, tableName string) (DbDistributed, error) {
 	var dinfo DbDistributed
 	dinfo.Cfg.DbNo = -1
 	dinfo.Cfg.TableNo = -1
-	if len(OrderCode) == 28 {
-		byteCode := []byte(OrderCode)
+	dinfo.Key = ""
+	dinfo.TableName = ""
+	dinfo.UniqueCode = ""
+	if len(UniqueCode) == 28 {
+		byteCode := []byte(UniqueCode)
 		dbNo, _ := strconv.ParseInt(string(byteCode[20:22]), 10, 64)
 		dinfo.Cfg.DbNo = dbNo
 		tableNo, _ := strconv.ParseInt(string(byteCode[22:24]), 10, 64)
 		dinfo.Cfg.TableNo = tableNo
-		dinfo.Name = fmt.Sprintf("%v%v", p.Sup(dbNo, 2), p.Sup(tableNo, 2))
+		dinfo.Key = fmt.Sprintf("%v%v", p.Sup(dbNo, 2), p.Sup(tableNo, 2))
 
-		if _, ok := p.connlist[dinfo.Name]; ok {
-			tableName := fmt.Sprintf("%v_%v", tableName, p.Sup(p.connlist[dinfo.Name].Cfg.TableNo, 2))
-			return tableName, p.connlist[dinfo.Name], nil
+		if _, ok := p.connlist[dinfo.Key]; ok {
+			rConn := p.connlist[dinfo.Key]
+			rConn.TableName = fmt.Sprintf("%v_%v", tableName, p.Sup(p.connlist[dinfo.Key].Cfg.TableNo, 2))
+			rConn.UniqueCode = UniqueCode
+			return rConn, nil
 		}
-		return "", dinfo, errors.New("不存在库和表")
+		return dinfo, errors.New("不存在库和表")
 	}
-	return "", dinfo, errors.New("长度必须是28位")
+	return dinfo, errors.New("长度必须是28位")
+}
+
+func (p *MyDbDistributed) AnalysisListCode(listCode []string, tableName string) (map[string][]DbDistributed, error) {
+	var list map[string][]DbDistributed
+	list = make(map[string][]DbDistributed)
+	for _, item := range listCode {
+		d, err := p.AnalysisCode(item, tableName)
+		if err != nil {
+			fmt.Println(err.Error())
+			return list, err
+		}
+		list[d.Key] = append(list[d.Key], d)
+	}
+	return list, nil
 }
 
 func (p *MyDbDistributed) pidSub(i int64) int64 {
